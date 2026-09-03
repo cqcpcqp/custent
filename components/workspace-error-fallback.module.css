@@ -1,0 +1,241 @@
+.document {
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.screen {
+  --error-canvas: #f7f8f5;
+  --error-panel: rgba(255, 255, 255, 0.94);
+  --error-ink: #18241f;
+  --error-muted: #68756f;
+  --error-line: #dfe5df;
+  --error-accent: #176b55;
+  --error-accent-strong: #105744;
+  --error-accent-soft: #dcece5;
+  --error-danger: #a43e42;
+  --error-danger-soft: #faeeee;
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  min-width: 0;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 32px;
+  overflow: auto;
+  color: var(--error-ink);
+  background:
+    radial-gradient(circle at 50% 8%, var(--error-accent-soft), transparent 34%),
+    var(--error-canvas);
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+  text-rendering: optimizeLegibility;
+}
+
+.card {
+  width: min(100%, 520px);
+  padding: 30px;
+  border: 1px solid var(--error-line);
+  border-radius: 22px;
+  background: var(--error-panel);
+  box-shadow:
+    0 18px 50px rgba(20, 35, 28, 0.1),
+    0 2px 8px rgba(20, 35, 28, 0.04);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 32px;
+  color: var(--error-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.mark {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--error-accent);
+  box-shadow: 0 7px 18px rgba(23, 107, 85, 0.2);
+}
+
+.mark svg {
+  width: 27px;
+  height: 27px;
+}
+
+.statusIcon {
+  display: inline-flex;
+  width: 46px;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 17px;
+  border-radius: 14px;
+  color: var(--error-danger);
+  background: var(--error-danger-soft);
+}
+
+.statusIcon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.card h1 {
+  margin: 0;
+  color: var(--error-ink);
+  font-size: clamp(22px, 5vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.card p {
+  margin: 12px 0 0;
+  color: var(--error-muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.actions button,
+.actions a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.actions svg {
+  width: 17px;
+  height: 17px;
+}
+
+.actions .primary {
+  color: #fff;
+  background: var(--error-accent);
+}
+
+.actions .primary:hover {
+  background: var(--error-accent-strong);
+}
+
+.actions .secondary {
+  border-color: var(--error-line);
+  color: var(--error-ink);
+  background: transparent;
+}
+
+.actions .secondary:hover {
+  border-color: var(--error-accent);
+  color: var(--error-accent);
+  background: var(--error-accent-soft);
+}
+
+.actions button:focus-visible,
+.actions a:focus-visible {
+  outline: 3px solid rgba(23, 107, 85, 0.26);
+  outline-offset: 3px;
+}
+
+:global(html[data-theme="dark"]) .screen {
+  --error-canvas: #212121;
+  --error-panel: rgba(47, 47, 47, 0.96);
+  --error-ink: #ececec;
+  --error-muted: #a7a7a7;
+  --error-line: #444;
+  --error-accent: #5fc6a8;
+  --error-accent-strong: #8bdaba;
+  --error-accent-soft: #263b35;
+  --error-danger: #ff8b91;
+  --error-danger-soft: #472a2d;
+  color-scheme: dark;
+}
+
+:global(html[data-theme="dark"]) .card {
+  box-shadow:
+    0 20px 54px rgba(0, 0, 0, 0.34),
+    0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(html[data-theme="system"]) .screen {
+    --error-canvas: #212121;
+    --error-panel: rgba(47, 47, 47, 0.96);
+    --error-ink: #ececec;
+    --error-muted: #a7a7a7;
+    --error-line: #444;
+    --error-accent: #5fc6a8;
+    --error-accent-strong: #8bdaba;
+    --error-accent-soft: #263b35;
+    --error-danger: #ff8b91;
+    --error-danger-soft: #472a2d;
+    color-scheme: dark;
+  }
+
+  :global(html[data-theme="system"]) .card {
+    box-shadow:
+      0 20px 54px rgba(0, 0, 0, 0.34),
+      0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+}
+
+@media (max-width: 560px) {
+  .screen {
+    align-items: end;
+    padding: 16px;
+  }
+
+  .card {
+    padding: 24px 20px;
+    border-radius: 18px;
+  }
+
+  .brand {
+    margin-bottom: 26px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions button,
+  .actions a {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actions button,
+  .actions a {
+    transition: none;
+  }
+}
