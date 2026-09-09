@@ -31,6 +31,7 @@ const migrationFilenames = [
   "014_done_event_message_feedback.sql",
   "015_run_regeneration_snapshots.sql",
   "016_conversation_branches.sql",
+  "029_custom_instructions.sql",
 ] as const;
 
 describe.runIf(databaseUrl !== undefined)(

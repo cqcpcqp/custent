@@ -1,0 +1,101 @@
+name: custent
+
+x-app: &app
+  image: ${CUSTENT_IMAGE:?CUSTENT_IMAGE must be an immutable image reference}
+  init: true
+  restart: unless-stopped
+  env_file:
+    - path: /opt/custent/shared/app.env
+      format: raw
+  environment:
+    ARTIFACT_DIR: /data/artifacts
+    INPUT_ATTACHMENT_DIR: /data/input-attachments
+    RUN_WORKER_CONCURRENCY: "1"
+  volumes:
+    - /opt/custent/shared/artifacts:/data/artifacts
+    - /opt/custent/shared/input-attachments:/data/input-attachments
+  depends_on:
+    db:
+      condition: service_healthy
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - path: /opt/custent/shared/db.env
+        format: raw
+    volumes:
+      - /opt/custent/shared/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U custent -d custent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    shm_size: 128mb
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  web:
+    <<: *app
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/bootstrap', {signal: AbortSignal.timeout(5000)}).then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 6s
+      retries: 12
+      start_period: 30s
+
+  worker:
+    <<: *app
+    command: [node, --import, tsx, scripts/agent-worker.ts]
+    stop_grace_period: 10m
+
+  reaper:
+    <<: *app
+    command: [node, --import, tsx, scripts/run-reaper.ts]
+
+  attachments:
+    <<: *app
+    command: [node, --import, tsx, scripts/input-attachment-worker.ts]
+
+  migrate:
+    <<: *app
+    restart: "no"
+    profiles: [tools]
+    command: [node, --import, tsx, scripts/migrate.ts]
+
+  proxy:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /opt/custent/shared/maintenance:/maintenance:ro
+    healthcheck:
+      test: [CMD, nginx, -t]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

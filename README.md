@@ -154,6 +154,8 @@ Run Reaper 启动后会立即处理一批缺失持久输入或租约已废弃的
 
 ### 生产方式
 
+单台服务器的 GitHub Actions / GHCR / Docker Compose 受限测试部署见 [部署文档](docs/deployment.md)。该方案保留独立 Worker、停写备份与迁移流程，不开放未经认证的公网访问。
+
 先完成一次构建：
 
 ```bash
