@@ -19,6 +19,25 @@ function cssRule(source: string, selector: string): string {
   return source.slice(start, end + 1);
 }
 
+describe("composer input alignment", () => {
+  it("centers a single line within the send-button height without limiting multiline growth", async () => {
+    const styles = await projectSource("app/globals.css");
+    const textarea = cssRule(styles, ".composer textarea");
+
+    expect(textarea).toContain("min-height: 36px");
+    expect(textarea).toContain("line-height: 24px");
+    expect(textarea).toContain("padding: 6px 1px");
+    expect(textarea).toContain("align-self: center");
+    expect(textarea).toContain("max-height: 176px");
+    expect(textarea).toContain("overflow-y: auto");
+    expect(cssRule(styles, ".composer__send")).toContain("height: 36px");
+    expect(styles).toMatch(/\.composer \{\s*display: block;\s*padding: 8px 9px;/u);
+    expect(cssRule(styles, ".execution-profile-picker__trigger")).toContain(
+      "font-size: var(--type-secondary)",
+    );
+  });
+});
+
 function relativeLuminance(hex: string): number {
   const channels = [1, 3, 5].map((start) =>
     Number.parseInt(hex.slice(start, start + 2), 16) / 255,

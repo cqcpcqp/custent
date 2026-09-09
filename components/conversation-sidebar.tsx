@@ -278,7 +278,7 @@ const runStatusLabels: Record<AgentRunStatus, string> = {
   completed: "已完成",
   failed: "失败",
   cancelled: "已停止",
-  reconciliation_required: "待对账",
+  reconciliation_required: "已结束",
 };
 
 const themeOptions = [

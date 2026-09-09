@@ -6,6 +6,7 @@ import type {
 } from "@/lib/contracts";
 import { AppError } from "@/lib/errors";
 import { getPool, withTransaction } from "@/lib/db/pool";
+import { materializeInterruptedRunContext } from "@/lib/runs/interrupted-context";
 
 import { calculateCreditCharge } from "./calculate";
 import type {
@@ -466,7 +467,25 @@ export async function beginRunReservationInTransaction(
       }
       runStatus = "queued";
       conversationTurn = "1";
-    } else if (parent.status === "completed") {
+    } else if (
+      parent.status === "completed" ||
+      parent.status === "cancelled" ||
+      parent.status === "reconciliation_required"
+    ) {
+      if (outstandingRuns.rowCount !== 0) {
+        throw new AppError(
+          "RUN_IN_PROGRESS",
+          "Another branch already has an outstanding Run",
+          409,
+        );
+      }
+      if (parent.status !== "completed") {
+        await materializeInterruptedRunContext({
+          userId: input.userId,
+          conversationId: input.conversationId,
+          runId: parent.id,
+        }, client);
+      }
       const parentContext = await client.query<{ exists: boolean }>(
         `
           SELECT EXISTS (
@@ -481,13 +500,6 @@ export async function beginRunReservationInTransaction(
         throw new AppError(
           "RUN_CONTEXT_UNAVAILABLE",
           "Parent Run continuation context is unavailable",
-          409,
-        );
-      }
-      if (outstandingRuns.rowCount !== 0) {
-        throw new AppError(
-          "RUN_IN_PROGRESS",
-          "Another branch already has an outstanding Run",
           409,
         );
       }
@@ -540,8 +552,8 @@ export async function beginRunReservationInTransaction(
       conversationTurn = (BigInt(parent.conversation_turn) + 1n).toString();
     } else {
       throw new AppError(
-        "STALE_PARENT",
-        "A new child Run requires a completed or outstanding parent",
+        "RUN_CONTEXT_UNAVAILABLE",
+        "The parent Run has no continuation context; retry the failed Run first",
         409,
       );
     }

@@ -29,7 +29,7 @@ export const backgroundRunHistoryStatusFilters = [
   { value: "completed", label: "已完成" },
   { value: "failed", label: "失败" },
   { value: "cancelled", label: "已停止" },
-  { value: "reconciliation_required", label: "待对账" },
+  { value: "reconciliation_required", label: "费用待确认" },
 ] as const satisfies ReadonlyArray<{
   value: BackgroundRunHistoryStatusFilter;
   label: string;

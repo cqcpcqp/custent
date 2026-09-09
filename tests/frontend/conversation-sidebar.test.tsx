@@ -478,7 +478,7 @@ describe("conversation sidebar", () => {
     ["completed", "已完成"],
     ["failed", "失败"],
     ["cancelled", "已停止"],
-    ["reconciliation_required", "待对账"],
+    ["reconciliation_required", "已结束"],
   ] as const)(
     "keeps an accessible compact %s run signal beside the title",
     (status, label) => {

@@ -46,7 +46,7 @@ describe("run completion notifications", () => {
     expect(markup).toContain(
       'aria-label="后台运行通知列表，仅显示最新 1 项，共 4 项"',
     );
-    expect(markup).toContain("“英国进口商”后台研究需要核对积分");
+    expect(markup).toContain("“英国进口商”后台生成已结束，可继续发送消息");
     expect(markup).toContain("另有 3 项可在后台任务中查看");
     expect(markup.match(/class="run-completion-notification /gu)).toHaveLength(
       1,
@@ -58,7 +58,7 @@ describe("run completion notifications", () => {
       [notifications[0], "后台研究已完成", "completed"],
       [notifications[1], "后台研究未能完成", "failed"],
       [notifications[2], "后台研究已停止", "cancelled"],
-      [notifications[3], "后台研究需要核对积分", "reconciliation_required"],
+      [notifications[3], "后台生成已结束，可继续发送消息", "reconciliation_required"],
     ] as const;
 
     for (const [notification, label, className] of expectations) {

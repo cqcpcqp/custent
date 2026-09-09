@@ -64,10 +64,11 @@ function AccountUsageBalanceSummary({
           <dd>{formatAccountUsageNumber(balance.reserved)}</dd>
         </div>
         <div>
-          <dt>待对账冻结积分</dt>
+          <dt>费用待确认的预扣积分</dt>
           <dd>{formatAccountUsageNumber(balance.frozen)}</dd>
         </div>
       </dl>
+      <p>预扣积分不是最终消费。费用确认无需你操作；当前计费按 token 和搜索次数计算，并非美元账单换算。</p>
     </section>
   );
 }

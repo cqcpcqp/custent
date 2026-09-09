@@ -1,4 +1,9 @@
-import type { AgentInputItem } from "@openai/agents";
+import {
+  OpenAIResponsesModel,
+  setTracingDisabled,
+  withTrace,
+  type AgentInputItem,
+} from "@openai/agents";
 import type {
   Pool,
   PoolClient,
@@ -6,6 +11,8 @@ import type {
   QueryResultRow,
 } from "pg";
 import { describe, expect, it, vi } from "vitest";
+
+import { createSilentOpenAIClient } from "@/lib/agent/sharesub-client";
 
 import {
   readRunSessionSnapshot,
@@ -15,6 +22,7 @@ import {
 } from "./session-snapshots";
 
 const runId = "11111111-1111-4111-8111-111111111111";
+setTracingDisabled(true);
 const createdAt = new Date("2026-08-26T08:00:00.000Z");
 const itemCreatedAt = new Date("2026-08-26T08:00:01.000Z");
 const items = [
@@ -265,6 +273,58 @@ describe("writeRunSessionSnapshot", () => {
     ).rejects.toBeInstanceOf(RunSessionSnapshotConflictError);
   });
 
+  it("persists real SDK web-search output with an absent optional result", async () => {
+    const model = new OpenAIResponsesModel(createSilentOpenAIClient({
+      apiKey: "test-key",
+      baseURL: "https://provider.example.com/v1",
+      fetch: async () => new Response(JSON.stringify({
+        id: "resp_search",
+        output: [{
+          id: "ws_search",
+          type: "web_search_call",
+          status: "completed",
+          action: { type: "search", query: "pump buyers" },
+        }],
+        usage: {
+          input_tokens: 10,
+          output_tokens: 5,
+          total_tokens: 15,
+          input_tokens_details: { cached_tokens: 0 },
+          output_tokens_details: { reasoning_tokens: 0 },
+        },
+      }), { headers: { "content-type": "application/json" } }),
+    }), "test-model");
+    const response = await withTrace("snapshot test", () => model.getResponse({
+      input: "Find pump buyers",
+      modelSettings: {},
+      tools: [],
+      outputType: "text",
+      handoffs: [],
+      tracing: false,
+    }));
+    expect(response.output[0]).toHaveProperty("output", undefined);
+    const persisted = JSON.parse(JSON.stringify(response.output)) as AgentInputItem[];
+    const query = vi.fn(async (sql: string, parameters?: unknown[]) => {
+      if (sql.includes("INSERT INTO run_session_snapshots")) {
+        return queryResult([{ run_id: runId }], "INSERT");
+      }
+      if (sql.includes("INSERT INTO run_session_snapshot_items")) {
+        expect(parameters?.slice(0, 2)).toEqual([runId, "post"]);
+        expect(JSON.parse(parameters?.[2] as string)).toEqual(persisted);
+        return queryResult([], "INSERT");
+      }
+      if (sql.includes("FROM run_session_snapshots snapshot")) {
+        return queryResult(snapshotRows(persisted, { phase: "post" }));
+      }
+      throw new Error(`Unexpected query: ${sql}`);
+    });
+    await expect(writeRunSessionSnapshot(
+      runId, "post", response.output,
+      transactionClient(query as unknown as PoolClient["query"]),
+    )).resolves.toMatchObject({ items: persisted });
+    expect(response.output[0]).toHaveProperty("output", undefined);
+  });
+
   it("rejects lossy JSON and invalid AgentInputItem values before querying", async () => {
     const query = vi.fn();
     const client = transactionClient(query as unknown as PoolClient["query"]);
@@ -276,7 +336,19 @@ describe("writeRunSessionSnapshot", () => {
         [{ role: "user", content: "x", extra: undefined } as unknown as AgentInputItem],
         client,
       ),
-    ).rejects.toThrow("losslessly JSON-serializable");
+    ).rejects.toThrow("contains fields outside the AgentInputItem contract");
+    for (const output of [NaN, Infinity, [undefined], new Date()]) {
+      await expect(writeRunSessionSnapshot(
+        runId,
+        "post",
+        [{
+          type: "hosted_tool_call",
+          name: "web_search_call",
+          providerData: { invalid: output },
+        }],
+        client,
+      )).rejects.toThrow("losslessly JSON-serializable");
+    }
     await expect(
       writeRunSessionSnapshot(
         runId,

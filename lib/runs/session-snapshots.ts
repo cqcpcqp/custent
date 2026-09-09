@@ -109,16 +109,23 @@ function serializeItems(items: readonly AgentInputItem[]): {
     throw new TypeError("items must be an array");
   }
 
+  const canonicalItems = items.map((item, index) =>
+    omitUndefinedObjectProperties(parseAgentInputItem(
+      item,
+      (detail) => new TypeError(`items[${index}] ${detail}`),
+    )),
+  );
+
   let serialized: string;
   let jsonItems: unknown;
   try {
-    serialized = JSON.stringify(items);
+    serialized = JSON.stringify(canonicalItems);
     jsonItems = JSON.parse(serialized) as unknown;
   } catch {
     throw new TypeError("items must contain JSON-serializable values");
   }
 
-  if (!Array.isArray(jsonItems) || !isDeepStrictEqual(jsonItems, items)) {
+  if (!Array.isArray(jsonItems) || !isDeepStrictEqual(jsonItems, canonicalItems)) {
     throw new TypeError("items must contain losslessly JSON-serializable values");
   }
 
@@ -133,6 +140,24 @@ function serializeItems(items: readonly AgentInputItem[]): {
     items: structuredClone(validated),
     serialized,
   };
+}
+
+function omitUndefinedObjectProperties(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(omitUndefinedObjectProperties);
+  }
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    Object.getPrototypeOf(value) === Object.prototype
+  ) {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, property]) => property !== undefined)
+        .map(([key, property]) => [key, omitUndefinedObjectProperties(property)]),
+    );
+  }
+  return value;
 }
 
 function integrityError(

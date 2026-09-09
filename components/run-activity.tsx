@@ -83,7 +83,7 @@ const statusNames: Record<AgentRunStatus, string> = {
   completed: "已完成",
   failed: "失败",
   cancelled: "已停止",
-  reconciliation_required: "待对账",
+  reconciliation_required: "已结束",
 };
 
 const terminalStatuses = new Set<AgentRunStatus>([
@@ -727,7 +727,7 @@ function incompleteActivityMeta(outcome: IncompleteActivityOutcome): string {
     case "failed":
       return "失败";
     case "reconciliation_required":
-      return "未完成 · 待对账";
+      return "已中断";
   }
 }
 
@@ -738,7 +738,7 @@ function terminalErrorMeta(
     return "运行已停止";
   }
   if (error.code === "RUN_REQUIRES_RECONCILIATION") {
-    return "运行待对账";
+    return "生成已结束，费用待确认";
   }
   return "运行失败";
 }
@@ -750,7 +750,7 @@ function terminalErrorTitle(
     return "运行已停止";
   }
   if (error.code === "RUN_REQUIRES_RECONCILIATION") {
-    return "运行需要核对积分";
+    return "生成已结束";
   }
   return "运行未能完成";
 }
@@ -1329,6 +1329,9 @@ export function RunProcessCard({
     connectionState,
   );
   const duration = formatRunDuration(run, now);
+  const terminalLabel = status === "reconciliation_required" && run.cancelRequestedAt !== null
+    ? "已停止"
+    : statusNames[status];
   const headline = status === "completed"
     ? `思考了 ${duration}`
     : status === "queued"
@@ -1336,7 +1339,7 @@ export function RunProcessCard({
       : status === "running"
         ? `${isStopping ? "正在停止" : "正在思考"} · ${duration}`
       : terminalStatuses.has(status)
-        ? `思考了 ${duration} · ${statusNames[status]}`
+        ? `思考了 ${duration} · ${terminalLabel}`
         : statusNames[status];
   const attentionConnection =
     connectionPresentation !== null &&
@@ -1566,7 +1569,9 @@ export function RunActivityPanel({
       : status === null || terminalStatuses.has(status)
       ? status === null
         ? null
-        : statusNames[status]
+        : status === "reconciliation_required" && run !== null && run.cancelRequestedAt !== null
+          ? "已停止"
+          : statusNames[status]
       : latestStatusMessage(events) ?? statusNames[status];
   const connectionPresentation = runEventConnectionPresentation(
     connectionState,

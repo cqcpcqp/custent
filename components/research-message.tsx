@@ -1368,13 +1368,13 @@ function terminalRunCopy(
       return {
         status,
         title: "这次研究已停止",
-        message: "运行已停止。",
+        message: "你可以输入“继续”，或直接发送新的要求。",
       };
     case "reconciliation_required":
       return {
         status,
-        title: "这次研究需要核对积分",
-        message: "生成内容已保留；这次运行的积分需要核对。",
+        title: run.cancelRequestedAt !== null ? "这次研究已停止" : "这次生成已中断",
+        message: "已生成内容已保留。你可以输入“继续”，或直接发送新的要求；费用确认无需你操作。",
       };
   }
 }

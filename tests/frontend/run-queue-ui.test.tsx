@@ -216,6 +216,28 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("stopped generation continuation", () => {
+  it("shows a stopped run and actionable continuation instead of asking the user to reconcile credits", () => {
+    const stoppedRun: AgentRun = {
+      ...agentRun("reconciliation_required"),
+      cancelRequestedAt: "2026-08-25T08:00:04.000Z",
+    };
+    const markup = renderToStaticMarkup(
+      <TerminalRunMessage
+        events={[]}
+        onOpenActivity={() => undefined}
+        run={stoppedRun}
+      />,
+    );
+    expect(markup).toContain("这次研究已停止");
+    expect(markup).toContain("你可以输入“继续”，或直接发送新的要求");
+    expect(markup).toContain("费用确认无需你操作");
+    expect(markup).not.toContain("待对账");
+    expect(markup).not.toContain("核对积分");
+    expect(markup).not.toContain("重试这轮研究");
+  });
+});
+
 function renderTerminal(
   status: "failed" | "cancelled" | "reconciliation_required",
   input: {

@@ -23,7 +23,7 @@ const outcomeLabels: Record<RunCompletionOutcome, string> = {
   completed: "后台研究已完成",
   failed: "后台研究未能完成",
   cancelled: "后台研究已停止",
-  reconciliation_required: "后台研究需要核对积分",
+  reconciliation_required: "后台生成已结束，可继续发送消息",
 };
 
 function notificationAnnouncement(

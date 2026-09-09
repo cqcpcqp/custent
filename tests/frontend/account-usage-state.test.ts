@@ -127,7 +127,7 @@ describe("account usage pagination and presentation state", () => {
       completed: "已完成",
       failed: "失败",
       cancelled: "已取消",
-      reconciliation_required: "待对账",
+      reconciliation_required: "费用待确认",
     });
   });
 

@@ -3273,8 +3273,8 @@ html[data-theme="dark"] .shared-conversation-page--not-found > section {
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow:
-    0 8px 24px rgba(20, 35, 28, 0.08),
-    0 1px 2px rgba(20, 35, 28, 0.04);
+    0 4px 16px rgba(20, 35, 28, 0.045),
+    0 1px 2px rgba(20, 35, 28, 0.025);
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
@@ -3283,15 +3283,16 @@ html[data-theme="dark"] .shared-conversation-page--not-found > section {
 .composer:focus-within {
   border-color: rgba(23, 107, 85, 0.36);
   box-shadow:
-    0 10px 28px rgba(20, 35, 28, 0.1),
-    0 0 0 3px rgba(23, 107, 85, 0.055);
+    0 4px 18px rgba(20, 35, 28, 0.055),
+    0 0 0 2px rgba(23, 107, 85, 0.04);
 }
 
 .composer textarea {
   width: 100%;
-  min-height: 24px;
+  min-height: 36px;
   max-height: 176px;
-  padding: 2px 1px;
+  align-self: center;
+  padding: 6px 1px;
   overflow-y: auto;
   border: 0;
   outline: 0;
@@ -3299,7 +3300,7 @@ html[data-theme="dark"] .shared-conversation-page--not-found > section {
   color: var(--ink);
   background: transparent;
   font-size: var(--type-chat-input);
-  line-height: 1.55;
+  line-height: 24px;
   scrollbar-color: rgba(49, 64, 57, 0.2) transparent;
   scrollbar-width: thin;
 }
@@ -9262,7 +9263,7 @@ html[data-theme="dark"] .account-usage-balance__grid > div {
 
 .composer {
   display: block;
-  padding: 9px 9px 8px;
+  padding: 8px 9px;
 }
 
 .composer__input-row {
@@ -9296,7 +9297,7 @@ html[data-theme="dark"] .account-usage-balance__grid > div {
   border-radius: 999px;
   color: var(--muted);
   background: transparent;
-  font-size: var(--type-tertiary);
+  font-size: var(--type-secondary);
   font-weight: 650;
   line-height: 1;
   transition:

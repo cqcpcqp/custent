@@ -206,7 +206,7 @@ describe("background run center dialog", () => {
       "已完成",
       "失败",
       "已停止",
-      "待对账",
+      "费用待确认",
     ]) {
       expect(markup).toContain(`>${label}<`);
     }
@@ -264,7 +264,7 @@ describe("background run center dialog", () => {
       />,
     );
 
-    for (const label of ["全部", "已完成", "失败", "已停止", "待对账"]) {
+    for (const label of ["全部", "已完成", "失败", "已停止", "费用待确认"]) {
       expect(loading).toContain(`>${label}<`);
     }
     expect(loading).toContain('aria-pressed="true"');

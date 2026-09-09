@@ -62,7 +62,7 @@ import type {
   RunLease,
 } from "./types";
 import { materializeRetrySourcePreRunContext } from "./pre-run-context";
-import { writeRunSessionSnapshot } from "./session-snapshots";
+import { readRunSessionSnapshot, writeRunSessionSnapshot } from "./session-snapshots";
 
 type RunRow = {
   id: string;
@@ -1158,7 +1158,13 @@ export async function retryAgentRun(
         throw new TypeError("Retry predecessor Run is missing");
       }
       if (predecessorResult.rows[0].status !== "completed") {
-        retryStatus = "waiting";
+        const predecessorStatus = predecessorResult.rows[0].status;
+        const interruptedSnapshot = (
+          predecessorStatus === "cancelled" || predecessorStatus === "reconciliation_required"
+        ) ? await readRunSessionSnapshot(source.predecessor_run_id, "post", client) : null;
+        if (interruptedSnapshot === null) {
+          retryStatus = "waiting";
+        }
       }
     }
 

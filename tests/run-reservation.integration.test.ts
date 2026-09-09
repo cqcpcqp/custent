@@ -110,7 +110,7 @@ describe.runIf(databaseUrl !== undefined)("conversation run reservation", () => 
         },
         database,
       ),
-    ).rejects.toMatchObject({ code: "STALE_PARENT", status: 409 });
+    ).rejects.toMatchObject({ code: "RUN_CONTEXT_UNAVAILABLE", status: 409 });
   });
 
   it("allows exactly one reservation when two requests race for one conversation", async () => {

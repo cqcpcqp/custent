@@ -27,7 +27,7 @@ export const accountUsageStatusLabels = {
   completed: "已完成",
   failed: "失败",
   cancelled: "已取消",
-  reconciliation_required: "待对账",
+  reconciliation_required: "费用待确认",
 } as const satisfies Record<AgentRunStatus, string>;
 
 const accountUsageNumberFormatter = new Intl.NumberFormat("zh-CN");

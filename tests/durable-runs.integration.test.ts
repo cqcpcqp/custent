@@ -529,7 +529,7 @@ describe.runIf(databaseUrl !== undefined)("durable agent runs", () => {
     });
   });
 
-  it("commits the post-run snapshot, captured-rate settlement, and done event together", async () => {
+  it.each([false, true])("commits the post-run snapshot, settlement, and done event with SDK search output: %s", async (includeSearch) => {
     const userId = await createUser();
     const executionConfig = capturedConfig({
       billing: {
@@ -553,7 +553,7 @@ describe.runIf(databaseUrl !== undefined)("durable agent runs", () => {
     if (claim === null || claim.run.id !== start.run.id) {
       throw new Error("The post-snapshot source was not claimed");
     }
-    const sessionItems = [
+    const sessionItems: AgentInputItem[] = [
       { role: "user", content: "Persist this completed session" },
       {
         role: "assistant",
@@ -563,6 +563,20 @@ describe.runIf(databaseUrl !== undefined)("durable agent runs", () => {
         ],
       },
     ] satisfies AgentInputItem[];
+    if (includeSearch) {
+      sessionItems.splice(1, 0, {
+        type: "hosted_tool_call",
+        id: "ws_search",
+        name: "web_search_call",
+        status: "completed",
+        output: undefined,
+        providerData: {
+          id: "ws_search",
+          type: "web_search_call",
+          action: { type: "search", query: "pump buyers" },
+        },
+      });
+    }
 
     const result = await completeClaimedRun(
       {
@@ -585,7 +599,7 @@ describe.runIf(databaseUrl !== undefined)("durable agent runs", () => {
     expect(result.kind).toBe("completed");
     await expect(
       readRunSessionSnapshot(claim.run.id, "post", database),
-    ).resolves.toMatchObject({ items: sessionItems });
+    ).resolves.toMatchObject({ items: JSON.parse(JSON.stringify(sessionItems)) });
     expect(await getAgentRun(userId, claim.run.id, database)).toMatchObject({
       status: "completed",
     });
@@ -898,6 +912,177 @@ describe.runIf(databaseUrl !== undefined)("durable agent runs", () => {
         runId: claim.run.id,
       },
     });
+  });
+
+  it.each(["queued_cancel", "stream_cancel", "stream_failure"] as const)(
+    "continues after %s using retained context without changing the old billing ledger",
+    async (interruption) => {
+      const userId = await createUser();
+      const start = await enqueue(userId, "研究客户并导出 PDF");
+      const partialText = "已找到客户 A，正在整理资料。";
+      if (interruption === "queued_cancel") {
+        await cancelAgentRun(userId, start.run.id, database);
+      } else {
+        await new AgentRunWorker({
+          runtimeFactory: {
+            capability: runWorkerCapability(),
+            forRun: () => ({
+              async *run() {
+                yield { type: "delta" as const, text: partialText };
+                if (interruption === "stream_cancel") {
+                  await cancelAgentRun(userId, start.run.id, database);
+                }
+                throw new Error("Simulated interrupted request");
+              },
+            }),
+          },
+          database,
+          recoverAbandoned: false,
+          logger: { error: vi.fn() },
+        }).runOnce();
+      }
+      const sourceBefore = await getAgentRun(userId, start.run.id, database);
+      const ledgerBefore = await database.query(
+        "SELECT * FROM credit_ledger WHERE run_id = $1 ORDER BY id",
+        [start.run.id],
+      );
+      const continued = await enqueueInConversation(
+        userId, start.run.conversationId, "继续导出 PDF",
+      );
+      expect(continued.run).toMatchObject({
+        status: "queued",
+        predecessorRunId: start.run.id,
+        conversationTurn: "2",
+      });
+      const snapshot = await readRunSessionSnapshot(start.run.id, "post", database);
+      const expectedHistory: AgentInputItem[] = [{
+        role: "user",
+        content: [{ type: "input_text", text: "研究客户并导出 PDF" }],
+      }];
+      if (interruption !== "queued_cancel") {
+        expectedHistory.push({
+          role: "assistant",
+          status: "incomplete",
+          content: [{ type: "output_text", text: partialText }],
+        });
+      }
+      expect(snapshot?.items).toEqual(expectedHistory);
+      const logger = { error: vi.fn() };
+      await new AgentRunWorker({
+        runtimeFactory: {
+          capability: runWorkerCapability(),
+          forRun: () => ({
+            async *run(input, options) {
+              expect(await options.session.getItems()).toEqual(expectedHistory);
+              expect(input).toEqual([{
+                role: "user",
+                content: [{ type: "input_text", text: "继续导出 PDF" }],
+              }]);
+              yield completeEvent("PDF 已导出");
+            },
+          }),
+        },
+        database,
+        recoverAbandoned: false,
+        logger,
+      }).runOnce();
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(await getAgentRun(userId, continued.run.id, database)).toMatchObject({ status: "completed" });
+      expect(await getAgentRun(userId, start.run.id, database)).toEqual(sourceBefore);
+      const ledgerAfter = await database.query(
+        "SELECT * FROM credit_ledger WHERE run_id = $1 ORDER BY id",
+        [start.run.id],
+      );
+      expect(ledgerAfter.rows).toEqual(ledgerBefore.rows);
+      expect(await getCreditBalance(userId, database)).toEqual({
+        available: interruption === "queued_cancel" ? 1_000 : 900,
+        reserved: interruption === "queued_cancel" ? 0 : 100,
+      });
+    },
+  );
+
+  it("keeps continuation executable after cancelling and retrying a queued follow-up", async () => {
+    const userId = await createUser();
+    const start = await enqueue(userId, "研究客户");
+    await new AgentRunWorker({
+      runtimeFactory: {
+        capability: runWorkerCapability(),
+        forRun: () => ({
+          async *run() {
+            yield { type: "delta" as const, text: "客户 A" };
+            await cancelAgentRun(userId, start.run.id, database);
+            throw new Error("Stopped");
+          },
+        }),
+      },
+      database,
+      recoverAbandoned: false,
+      logger: { error: vi.fn() },
+    }).runOnce();
+    const followUp = await enqueueInConversation(userId, start.run.conversationId, "导出 PDF");
+    await cancelAgentRun(userId, followUp.run.id, database);
+    const retry = await retryAgentRun({
+      userId,
+      sourceRunId: followUp.run.id,
+      requestId: randomUUID(),
+    }, database);
+    expect(retry.run.status).toBe("queued");
+    await runOneSuccessfulWorker("重试已完成");
+    expect(await getAgentRun(userId, retry.run.id, database)).toMatchObject({ status: "completed" });
+    const sourceSnapshot = await readRunSessionSnapshot(start.run.id, "post", database);
+    expect(await readRunSessionSnapshot(retry.run.id, "pre", database))
+      .toMatchObject({ items: sourceSnapshot?.items });
+  });
+
+  it("materializes the stopped history when an already-waiting follow-up is cancelled", async () => {
+    const userId = await createUser();
+    const start = await enqueue(userId, "研究客户");
+    let waitingId = "";
+    await new AgentRunWorker({
+      runtimeFactory: {
+        capability: runWorkerCapability(),
+        forRun: () => ({
+          async *run() {
+            yield { type: "delta" as const, text: "已找到客户 A" };
+            const waiting = await enqueueInConversation(userId, start.run.conversationId, "导出 CSV");
+            waitingId = waiting.run.id;
+            await cancelAgentRun(userId, start.run.id, database);
+            throw new Error("Stopped");
+          },
+        }),
+      },
+      database,
+      recoverAbandoned: false,
+      logger: { error: vi.fn() },
+    }).runOnce();
+    expect(await getAgentRun(userId, waitingId, database)).toMatchObject({ status: "waiting" });
+    await cancelAgentRun(userId, waitingId, database);
+    const continued = await enqueueInConversation(userId, start.run.conversationId, "改成 PDF");
+    expect(continued.run.status).toBe("queued");
+    const snapshot = await readRunSessionSnapshot(waitingId, "post", database);
+    expect(snapshot?.items).toEqual([
+      { role: "user", content: [{ type: "input_text", text: "研究客户" }] },
+      { role: "assistant", status: "incomplete", content: [{ type: "output_text", text: "已找到客户 A" }] },
+      { role: "user", content: [{ type: "input_text", text: "导出 CSV" }] },
+    ]);
+    await runOneSuccessfulWorker("PDF 已完成");
+  });
+
+  it("does not invent continuation history for an interrupted model run without a pre snapshot", async () => {
+    const userId = await createUser();
+    const start = await enqueue(userId, "Missing historical context");
+    const claim = await claimNextRun({ workerId: randomUUID(), leaseDurationMs: 10_000 }, database);
+    if (claim === null) {
+      throw new Error("Run was not claimed");
+    }
+    const lease = { runId: claim.run.id, leaseOwner: claim.leaseOwner, leaseToken: claim.leaseToken };
+    await markRunModelStarted(lease, database);
+    await cancelAgentRun(userId, start.run.id, database);
+    await failClaimedRun({ lease, errorName: "Error" }, database);
+    await expect(enqueueInConversation(userId, start.run.conversationId, "继续"))
+      .rejects.toMatchObject({ code: "RUN_CONTEXT_UNAVAILABLE", status: 409 });
+    expect(await readRunSessionSnapshot(start.run.id, "post", database)).toBeNull();
+    expect(await getCreditBalance(userId, database)).toEqual({ available: 900, reserved: 100 });
   });
 
   it("creates and finalizes a generic artifact on a real claimed chat run", async () => {

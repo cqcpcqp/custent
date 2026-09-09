@@ -192,7 +192,7 @@ describe("incomplete activity terminal rendering", () => {
     );
 
     expect(markup).toContain("网页搜索 · 失败");
-    expect(markup).toContain("网页搜索 · 未完成 · 待对账");
+    expect(markup).toContain("网页搜索 · 已中断");
     expect(markup).not.toContain("返回 1 个来源");
     expect(markup).not.toContain("private compact query");
     expect(markup).toContain(">example.com<");
@@ -214,8 +214,8 @@ describe("incomplete activity terminal rendering", () => {
     {
       code: "RUN_REQUIRES_RECONCILIATION",
       searchTitle: "网页搜索未完成",
-      toolMeta: "保存研究结果 · 未完成 · 待对账",
-      terminalMeta: "运行待对账",
+      toolMeta: "保存研究结果 · 已中断",
+      terminalMeta: "生成已结束，费用待确认",
     },
   ] as const)(
     "renders $code without leaving incomplete steps running",

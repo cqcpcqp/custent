@@ -77,7 +77,7 @@ describe("account usage dialog", () => {
 
     expect(markup).toContain("可用积分");
     expect(markup).toContain("运行中预留积分");
-    expect(markup).toContain("待对账冻结积分");
+    expect(markup).toContain("费用待确认的预扣积分");
     expect(markup).toContain("7,495");
     expect(markup).toContain("1,500");
     expect(markup).toContain("500");

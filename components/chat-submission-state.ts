@@ -2,7 +2,7 @@ import { ApiClientError } from "@/components/api-client";
 import type { ChatRequest } from "@/lib/contracts";
 
 export const staleParentRecoveryMessage =
-  "对话分支已更新，草稿和附件已保留，请确认后重新发送。";
+  "消息未发送，对话内容已更新。输入的文字和附件已保留，请重新点击发送。";
 export const staleParentRecoveryFailedMessage =
   "检测到对话分支已变化，但刷新失败。草稿和附件已保留，请先重试加载会话，再重新发送。";
 

@@ -110,7 +110,11 @@ export async function materializeRetrySourcePreRunContext(
     if (predecessorResult.rowCount !== 1) {
       throw unavailable();
     }
-    if (predecessorResult.rows[0].status !== "completed") {
+    if (
+      predecessorResult.rows[0].status !== "completed" &&
+      predecessorResult.rows[0].status !== "cancelled" &&
+      predecessorResult.rows[0].status !== "reconciliation_required"
+    ) {
       if (input.allowDeferredPredecessor) {
         return { kind: "deferred" };
       }

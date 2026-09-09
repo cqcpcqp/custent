@@ -123,10 +123,13 @@ authorized live-provider verification and must not be inferred from this suite.
   probe has been run for this integration. Add an explicit Code Interpreter
   session product-credit rate to reservation/settlement, and copy generated
   container files into owner-bound artifact storage before enabling it.
-- Define stopped partial-answer semantics that can be displayed and used as
-  later context. Today a post-model cancellation with unknown cost correctly
-  enters `reconciliation_required` instead of pretending to be a normal
-  ChatGPT-style stopped response.
+- Stopped partial answers can now seed an explicit next turn in the same
+  conversation through immutable continuation snapshots. Pending billing remains
+  separate: post-model cancellations with unknown cost retain their ledger and
+  `reconciliation_required` status, but no longer block that continuation solely
+  because of the status. This is a new model request, not exact request resumption.
+  Provider-dollar billing and automatic settlement still require a verified cost
+  contract and an explicit dollar-to-credit conversion policy.
 - Add a provider-response recovery and administrator reconciliation path for
   Worker loss after model start. The independent Run Reaper only applies the
   existing conservative recovery/freeze rules; it does not reconstruct an

@@ -1797,7 +1797,7 @@ test("preserves cancelled and failed attempts across waiting retry, direct promo
     ".terminal-run-notice--reconciliation_required",
   );
   await expect(reconciliationNotice).toContainText(
-    "生成内容已保留；这次运行的积分需要核对。",
+    "已生成内容已保留。你可以输入“继续”，或直接发送新的要求；费用确认无需你操作。",
   );
   await expect(reconciliationNotice).not.toContainText(
     "RUN_REQUIRES_RECONCILIATION",

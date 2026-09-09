@@ -131,7 +131,7 @@ const apiErrorUserMessages = {
   "RUN_NOT_RETRYABLE\u0000409":
     "这次运行已不再支持重试，请刷新对话查看最新状态。",
   "RUN_REQUIRES_RECONCILIATION\u0000409":
-    "这次运行需要先完成积分核对，暂时不能继续。",
+    "这轮不能直接重试；你可以在输入框发送“继续”或新的要求。",
   "SHARE_NOT_FOUND\u0000404": "分享链接不存在或已发生变化。",
   "STALE_PARENT\u0000409": "对话分支已更新，请刷新后重试。",
 } as const satisfies Record<ApiErrorUserMessageKey, string>;

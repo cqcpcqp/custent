@@ -133,8 +133,8 @@ const statusPresentation = {
     description: "任务已停止，可查看活动记录",
   },
   reconciliation_required: {
-    label: "待对账",
-    description: "任务需要核对积分状态",
+    label: "费用待确认",
+    description: "生成已结束，可继续发送消息；费用确认无需你操作",
   },
 } as const satisfies Record<
   BackgroundRunCenterStatus,

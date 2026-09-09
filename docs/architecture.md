@@ -159,6 +159,14 @@ Worker 真正处理一个 Run 前保存的 `pre` Session snapshot 是 retry 上�
 
 ## Run 生命周期与租约
 
+### 停止后继续发送
+
+`030` 允许停止后的显式新消息继续同一对话。`cancelled` 与 `reconciliation_required` 不再直接导致 `STALE_PARENT`；只有实际选中分支不匹配才走分支刷新提示。费用待确认仍保留原状态和账本，不伪装成已成功结算的 `completed`。
+
+续聊在原 conversation lock 和新消息预扣事务内物化前序的不可变 `post` 快照：已有 `post` 原样复用，否则使用权威 `pre`、原输入消息及附件引用、按事件 ID 排序的已显示文字与文件记录。中断的助手文本标记为 `incomplete`，不复制未完成的 SDK function call、隐藏推理或待执行工具指令。模型已启动而缺少 `pre` 时严格拒绝；尚未启动就取消的 Run 才能复用既有不可变上下文恢复规则。这个快照只表示可用于续聊的上下文，不证明费用已经结算。
+
+数据库只允许有 `post` 快照的停止/待确认前序承接 `queued` 或 `running` 后继，保留 owner、conversation、相邻 Turn、不可变快照和重试身份约束。Worker 沿用读取前序 `post` 的路径，不恢复中断请求；显式新消息独立执行和结算。已有 `waiting` 队列不会自动提升，需先取消等待项；在已物化停止上下文之后新建的后继也能正常取消、重试。
+
 Run 状态为 `waiting`、`queued`、`running`、`completed`、`failed`、`cancelled` 或 `reconciliation_required`。
 
 1. Web/API 事务创建输入消息、积分预扣记录，以及 `queued` 或 `waiting` Run。
@@ -271,6 +279,8 @@ Code Interpreter 当前是默认关闭的初始链路。只有 `OPENAI_CODE_INTE
 5. 成本未知或超过预扣上限时，运行进入待对账状态，预扣不自动释放。
 
 积分账本只追加，不修改历史记录。
+
+当前 policy v1 是产品积分费率，而非美元账单：分别对输入/输出 token 按千 token 费率向上取整，再加 Web Search 次数费用。代码没有供应商美元实扣字段或美元兑积分配置。中断可能拿不到完整 usage，故只能保留预扣为费用待确认；这不能等同于最终消费，也不能据此禁止用户在原对话发起新一轮。真实美元计费需要另行确定供应商费用凭据、换算比例及幂等的后台结算契约，本次续聊修复不变更历史或新 Run 的计费率。
 
 上述结算模型尚未计入 Code Interpreter session 用量；这也是 `OPENAI_CODE_INTERPRETER_ENABLED` 默认关闭的生产边界，不得把 token 计费误当成已覆盖 Python session 成本。
 
