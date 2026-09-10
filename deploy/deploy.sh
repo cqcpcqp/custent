@@ -42,7 +42,21 @@ trap 'echo "Deployment failed. If maintenance was enabled, it remains enabled; d
 docker login ghcr.io --username "$registry_user" --password-stdin
 compose=(docker compose --project-name custent --file "$release_dir/compose.yml")
 "${compose[@]}" config --quiet
-"${compose[@]}" pull
+pull_succeeded=false
+for attempt in 1 2 3 4 5; do
+  if "${compose[@]}" pull; then
+    pull_succeeded=true
+    break
+  fi
+  if (( attempt == 5 )); then
+    echo "Image pull failed after 5 attempts" >&2
+    exit 1
+  fi
+  sleep_seconds=$((attempt * 10))
+  echo "Image pull failed; retrying in ${sleep_seconds}s (attempt ${attempt}/5)" >&2
+  sleep "$sleep_seconds"
+done
+test "$pull_succeeded" = true
 "${compose[@]}" run --rm --no-deps proxy nginx -t
 
 touch "$root/shared/maintenance/enabled"
