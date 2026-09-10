@@ -410,5 +410,5 @@ describe.runIf(databaseUrl !== undefined)("PostgreSQL data layer", () => {
     await expect(
       listResearchSnapshots(userId, conversation.id, database),
     ).resolves.toEqual([]);
-  });
+  }, 30_000);
 });

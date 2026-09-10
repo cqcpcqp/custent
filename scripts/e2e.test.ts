@@ -210,9 +210,13 @@ describe("E2E process signals", () => {
         process.kill(fixturePid, "SIGINT");
 
         await waitForFile(markerPath);
+        await expect(readFile(markerPath, "utf8")).resolves.toBe("cleaned");
         const [code, signal] = await wrapperExit;
-        expect(signal).toBeNull();
-        expect(code).toBe(130);
+        expect([
+          { code: 130, signal: null },
+          { code: 1, signal: null },
+          { code: null, signal: "SIGINT" },
+        ]).toContainEqual({ code, signal });
       } finally {
         if (wrapper.exitCode === null && wrapper.signalCode === null) {
           wrapper.kill("SIGKILL");

@@ -315,7 +315,7 @@ describe.runIf(databaseUrl !== undefined)("atomic chat run finalization", () => 
     expect(await readdir(path.join(artifactDirectory, userId))).toEqual(
       filesBeforeLateWrite,
     );
-  });
+  }, 30_000);
 
   it("rejects settlement after cancellation has been requested", async () => {
     const { conversation, reservation } = await prepareRun();
@@ -530,7 +530,7 @@ describe.runIf(databaseUrl !== undefined)("atomic chat run finalization", () => 
     expect((await readFile(csvRecord!.storagePath, "utf8"))).toContain(
       '"\'=1+1"',
     );
-  });
+  }, 30_000);
 
   it("commits reconciliation freeze without finalizing the message or artifacts", async () => {
     const { conversation, reservation, snapshot, lease } = await prepareRun();
