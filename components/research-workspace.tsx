@@ -79,6 +79,7 @@ import {
   ConversationBrowserDialog,
   type ConversationBrowserSelection,
 } from "@/components/conversation-browser-dialog";
+import { createClientId } from "@/components/client-id";
 import { CitationSourcesPanel } from "@/components/citation-sources-panel";
 import { ConversationLoadFailure } from "@/components/conversation-load-failure";
 import {
@@ -4452,7 +4453,7 @@ export function ResearchWorkspace({
       );
       const requestId =
         pendingMessageBranchRequestIdsRef.current.get(requestKey) ??
-        crypto.randomUUID();
+        createClientId();
       pendingMessageBranchRequestIdsRef.current.set(requestKey, requestId);
       setBranchingMessageKeys((current) => new Set(current).add(requestKey));
       dispatchConversation({
@@ -5621,7 +5622,7 @@ export function ResearchWorkspace({
         if (previewUrl !== null) {
           attachmentPreviewUrlsRef.current.add(previewUrl);
         }
-        const clientId = crypto.randomUUID();
+        const clientId = createClientId();
         const order = nextAttachmentDraftOrderToken(
           attachmentDraftOrderSequenceRef.current,
           clientId,
@@ -5910,7 +5911,7 @@ export function ResearchWorkspace({
       parentRunId,
       message,
       attachmentIds,
-      requestId: crypto.randomUUID(),
+      requestId: createClientId(),
       executionProfileId,
     };
     const pendingRequest =
@@ -6210,7 +6211,7 @@ export function ResearchWorkspace({
         }
         acceptedFiles.push({
           draftAttachment: {
-            clientId: crypto.randomUUID(),
+            clientId: createClientId(),
             file,
             name: file.name,
             mimeType,
@@ -6612,7 +6613,7 @@ export function ResearchWorkspace({
         attachmentIds,
         conversationId,
         message,
-        requestId: crypto.randomUUID(),
+        requestId: createClientId(),
         turn,
       });
       const pendingRequestKey = userMessageEditPendingRequestKey(
@@ -6959,7 +6960,7 @@ export function ResearchWorkspace({
     }
 
     const requestId =
-      pendingRetryRequestIdsRef.current.get(sourceRunId) ?? crypto.randomUUID();
+      pendingRetryRequestIdsRef.current.get(sourceRunId) ?? createClientId();
     pendingRetryRequestIdsRef.current.set(sourceRunId, requestId);
     setRetryingRunIds((current) => new Set(current).add(sourceRunId));
     const creditMutationRevision = beginCreditMutation();
@@ -7088,7 +7089,7 @@ export function ResearchWorkspace({
 
     const requestId =
       pendingRegenerateRequestIdsRef.current.get(sourceRunId) ??
-      crypto.randomUUID();
+      createClientId();
     pendingRegenerateRequestIdsRef.current.set(sourceRunId, requestId);
     setRegeneratingRunIds((current) => new Set(current).add(sourceRunId));
     const creditMutationRevision = beginCreditMutation();

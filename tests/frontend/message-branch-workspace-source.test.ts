@@ -53,7 +53,7 @@ describe("message branch workspace integration", () => {
     const requestIdLookup = callback.indexOf(
       "pendingMessageBranchRequestIdsRef.current.get(requestKey)",
     );
-    const requestIdCreation = callback.indexOf("crypto.randomUUID()", requestIdLookup);
+    const requestIdCreation = callback.indexOf("createClientId()", requestIdLookup);
     const requestIdStore = callback.indexOf(
       "pendingMessageBranchRequestIdsRef.current.set(requestKey, requestId)",
     );
