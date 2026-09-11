@@ -50,6 +50,7 @@
 - `main` push 或 `main` 上的手动触发运行检查、发布、部署。检查使用一次性 PostgreSQL，运行全部数据库集成测试，不调用真实供应商、不运行浏览器测试。
 - 发布使用 `GITHUB_TOKEN` 的 `packages: write`。部署使用当前 job 的 `packages: read` token，通过 SSH 标准输入传到 `docker login --password-stdin`。服务器只保存临时 Docker 登录配置，结束时清理；不需要长期 GHCR PAT。
 - 镜像带 commit SHA 标签，部署实际使用 digest。过时提交跳过部署，同一生产环境串行执行，不自动取消正在进行的迁移。
+- 若服务器到 GHCR 的链路持续失败，可在受信任机器拉取同一 digest，通过 SSH 执行 `docker save` / `docker load` 中转，再以 `CUSTENT_PRELOADED_IMAGE=sha256:<digest>` 调用部署脚本。脚本要求预载 image ID 与请求 digest 完全相同，并跳过 registry 登录和拉取；这不是接受可变 tag 的回退。
 - 不会从开发机自动上传 API Key 到 GitHub；供应商配置仅保存在服务器。服务器需要能访问 GHCR 和已配置的模型供应商。
 
 ## 发布与故障处理

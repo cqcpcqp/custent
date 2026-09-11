@@ -69,6 +69,9 @@ describe("restricted deployment configuration", () => {
     expect(script).toContain("flock -n 9");
     expect(script).toContain("--password-stdin");
     expect(script).toContain("--no-recreate");
+    expect(script).toContain('preloaded_image="${CUSTENT_PRELOADED_IMAGE:-}"');
+    expect(script).toContain('"$preloaded_image" != "$requested_digest"');
+    expect(script).toContain('docker image inspect "$preloaded_image"');
     expect(script).not.toContain("down --volumes");
   });
 
